@@ -172,14 +172,14 @@ extern "C" jint JNICALL Java_com_iped_ipcam_gui_UdtTools_monitorSocket(JNIEnv *e
 	audioSocket = monitor_socket(id, STUN_SOCK_AUTO);
 	if(audioSocket == NULL || audioSocket->sock < 0) {
 		free(id);
-		LOGI("### UdtTools monitor audio socket fail!  error info = %i", cmdSocket->sock);
+		LOGI("### UdtTools monitor audio socket fail!  error info = %i", audioSocket->sock);
 		return cmdSocket->sock;
 	}
 	//LOGI("### audioSocket socket = %d", audioSocket->sock);
 	videoSocket = monitor_socket(id, STUN_SOCK_AUTO);
 	if(videoSocket == NULL || videoSocket->sock < 0) {
 		free(id);
-		LOGI("### UdtTools monitor video socket fail!  error info = %i", cmdSocket->sock);
+		LOGI("### UdtTools monitor video socket fail!  error info = %i", videoSocket->sock);
 		return cmdSocket->sock;
 	}
 	//LOGI("### videoSocket socket = %d", videoSocket->sock);
@@ -206,7 +206,7 @@ extern "C" jint JNICALL Java_com_iped_ipcam_gui_UdtTools_initialSocket(JNIEnv *e
 	if(res <=-1) {
 		free(random);
 		free(id);
-		LOGI("### UdtTools start initial cmd socket fail !  error info = %i", videoSocket->sock);
+		LOGI("### UdtTools start initial cmd socket fail !  error info = %i", cmdSocket->sock);
 		return res;
 	}
 	*(random + 8)='A';
@@ -218,7 +218,7 @@ extern "C" jint JNICALL Java_com_iped_ipcam_gui_UdtTools_initialSocket(JNIEnv *e
 	if(res <=-1) {
 		free(random);
 		free(id);
-		LOGI("### UdtTools start initial audio socket fail !  error info = %i", videoSocket->sock);
+		LOGI("### UdtTools start initial audio socket fail !  error info = %i", audioSocket->sock);
 		return res;
 	}
 	*(random + 8)='V';
