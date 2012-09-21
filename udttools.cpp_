@@ -1,0 +1,128 @@
+#include "jni.h"
+//#include <utils/Log.h>
+
+#define LOGI(fmt, args...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, fmt, ##args)
+#define LOGD(fmt, args...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, fmt, ##args)
+#define LOGE(fmt, args...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, fmt, ##args) 
+
+#include<android/log.h>
+
+#define LOG_TAG "webcam"
+
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <cstdlib>
+#include <cstring>
+#include <fstream>
+#include <iostream>
+#include <udt.h>
+
+using namespace std;
+
+char*  jstringToChar(JNIEnv* env, jstring jstr )
+{
+	
+	   char* rtn = NULL; 
+	   jclass clsstring = env->FindClass("java/lang/String"); 
+	   jstring strencode = env->NewStringUTF("utf-8"); 
+	   jmethodID mid = env->GetMethodID(clsstring, "getBytes", "(Ljava/lang/String;)[B"); 
+	   jbyteArray barr= (jbyteArray)env->CallObjectMethod(jstr, mid, strencode); 
+	   jsize alen = env->GetArrayLength(barr); 
+	   jbyte* ba = env->GetByteArrayElements(barr, JNI_FALSE); 
+	   if (alen > 0) 
+	   { 
+			 rtn = (char*)malloc(alen + 1); 
+			 memcpy(rtn, ba, alen); 
+			 rtn[alen] = 0; 
+	   } 
+	   env->ReleaseByteArrayElements(barr, ba, 0); 
+    return rtn;
+} 
+
+extern "C" jint JNICALL Java_com_test_UdtTools_recvFile(JNIEnv *env, jobject thiz,jstring udtServerIp, jstring udtServerPort, jstring remoteFileName, jstring localFileName) {
+	LOGI("--->webcam jni init success");
+/*	UDT::startup();
+  
+	struct addrinfo hints, *peer;
+
+	memset(&hints, 0, sizeof(struct addrinfo));
+   	hints.ai_flags = AI_PASSIVE;
+   	hints.ai_family = AF_INET;
+   	hints.ai_socktype = SOCK_STREAM;
+
+	char* ip = jstringToChar(env,udtServerIp);
+	char* port = jstringToChar(env,udtServerPort);
+	UDTSOCKET fhandle = UDT::socket(hints.ai_family, hints.ai_socktype, hints.ai_protocol);
+ 	if (0 != getaddrinfo(ip, port, &hints, &peer))
+   	{
+      		cout << "incorrect server/peer address. " <<ip<< ":" << port << endl;
+      		return -1;
+   	} 
+
+	// connect to the server, implict bind
+   	if (UDT::ERROR == UDT::connect(fhandle, peer->ai_addr, peer->ai_addrlen))
+  	{
+      		cout << "connect: " << UDT::getlasterror().getErrorMessage() << endl;
+      		return -1;
+   	}
+
+
+	freeaddrinfo(peer);
+
+	// send name information of the requested file
+	char * remoteFile = jstringToChar(env,remoteFileName);
+   	int len = strlen(remoteFile);
+
+   	if (UDT::ERROR == UDT::send(fhandle, (char*)&len, sizeof(int), 0))
+   	{
+      		cout << "send: " << UDT::getlasterror().getErrorMessage() << endl;
+      		return -1;
+   	}
+
+   	if (UDT::ERROR == UDT::send(fhandle, remoteFile, len, 0))
+   	{
+      		cout << "send: " << UDT::getlasterror().getErrorMessage() << endl;
+      		return -1;
+   	}
+
+   	// get size information
+   	int64_t size;
+
+   	if (UDT::ERROR == UDT::recv(fhandle, (char*)&size, sizeof(int64_t), 0))
+   	{
+      		cout << "send: " << UDT::getlasterror().getErrorMessage() << endl;
+      		return -1;
+   	}
+
+   	if (size < 0)
+   	{
+		cout << "no such file " << remoteFile << " on the server\n";
+      		return -1;
+   	}
+
+   	// receive the file
+	char * savFileName = jstringToChar(env,localFileName);
+   	fstream ofs(savFileName, ios::out | ios::binary | ios::trunc);
+   	int64_t recvsize; 
+   	int64_t offset = 0;
+
+   	if (UDT::ERROR == (recvsize = UDT::recvfile(fhandle, ofs, offset, size)))
+   	{
+      		cout << "recvfile: " << UDT::getlasterror().getErrorMessage() << endl;
+      		return -1;
+   	}
+
+   	UDT::close(fhandle);
+
+   	ofs.close();
+ 	// use this function to release the UDT library
+   	UDT::cleanup();
+*/
+    return 0;
+}
+
+jint JNICALL Java_com_test_UdtTools_recv(JNIEnv *env,jint a) 
+{
+return 0;
+}
+
