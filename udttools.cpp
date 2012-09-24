@@ -367,6 +367,23 @@ extern "C" jint JNICALL Java_com_iped_ipcam_gui_UdtTools_recvAudioMsg(JNIEnv *en
        return dataLength;	
 }
 
+extern "C" jint JNICALL Java_com_iped_ipcam_gui_UdtTools_sendAudioMsg(JNIEnv *env, jobject thiz,jbyteArray amrBuffer, jint amrBufferLength)
+{
+	char* data = (char*)malloc(amrBufferLength);
+	env->GetByteArrayRegion (amrBuffer, (jint)0, (jint)amrBufferLength, (jbyte*)data);
+	int dataLength;
+	//char recvAudioBuf[smallAudioBufferLength];
+	if(audioSocket->type == STUN_SOCK_TCP) 
+	{
+		dataLength = send(audioSocket->sock, data, amrBufferLength, 0);
+	} else {
+		dataLength = UDT::send(audioSocket->sock, data, amrBufferLength, 0);
+	}
+	//LOGI("UdtTools send audio Msg length = %d", dataLength);
+	free(data);  
+        return dataLength;	
+}
+
 extern "C" jint JNICALL Java_com_iped_ipcam_gui_UdtTools_recvVideoMsg(JNIEnv *env, jobject thiz,jbyteArray buffer, int bufferLength)
 {
     int dataLength;
