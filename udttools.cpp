@@ -367,20 +367,37 @@ extern "C" jint JNICALL Java_com_iped_ipcam_gui_UdtTools_recvAudioMsg(JNIEnv *en
        return dataLength;	
 }
 
-extern "C" jint JNICALL Java_com_iped_ipcam_gui_UdtTools_sendAudioMsg(JNIEnv *env, jobject thiz,jbyteArray amrBuffer, jint amrBufferLength)
+extern "C" jint JNICALL Java_com_iped_ipcam_gui_UdtTools_sendAudioMsg(JNIEnv *env, jobject thiz,jshortArray amrBuffer, int amrBufferLength)
 {
-	char* data = (char*)malloc(amrBufferLength);
-	env->GetByteArrayRegion (amrBuffer, (jint)0, (jint)amrBufferLength, (jbyte*)data);
+	short* data = (short*)malloc(amrBufferLength);
+LOGI("UdtTools  = %p", data);
+LOGI("UdtTools  = %p", amrBuffer);
+LOGI("UdtTools  = %d", amrBuffer[0]);
+	env->GetShortArrayRegion(amrBuffer, 0, amrBufferLength, data);
+	//unsigned char* sendAudio = (unsigned char*)malloc(amrBufferLength*2);
+	//short tmp;
+	//int index = 0;
+	//for(int i=0;i<amrBufferLength;i++)
+	//{
+	   //tmp = data[i];
+//LOGI("UdtTools send audio amrBufferLength = %d,%d", tmp,(tmp & 0xFF));
+//LOGI("UdtTools  = %d,%d,%p", amrBufferLength,index,sendAudio);
+//index+=2;
+	   //sendAudio[index++] = tmp & 0x00FF;	   
+	  // sendAudio[index++] = tmp & 0xFF00;	   
+	//}
+
 	int dataLength;
 	//char recvAudioBuf[smallAudioBufferLength];
-	if(audioSocket->type == STUN_SOCK_TCP) 
-	{
-		dataLength = send(audioSocket->sock, data, amrBufferLength, 0);
-	} else {
-		dataLength = UDT::send(audioSocket->sock, data, amrBufferLength, 0);
-	}
+	//if(audioSocket->type == STUN_SOCK_TCP) 
+	//{
+		//dataLength = send(audioSocket->sock, sendAudio, index, 0);
+	//} else {
+		//dataLength = UDT::send(audioSocket->sock, sendAudio, index, 0);
+	//}
 	//LOGI("UdtTools send audio Msg length = %d", dataLength);
 	free(data);  
+	//free(sendAudio); 
         return dataLength;	
 }
 
