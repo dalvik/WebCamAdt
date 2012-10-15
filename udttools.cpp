@@ -35,7 +35,7 @@ CmdSocket socketArr[length];
 
 StunSocket *threeSocketArr[3];
 
-char* deviceId;
+StunSocket *threeSocketArrTmp[3];
 
 char buf[1024];
 
@@ -84,6 +84,23 @@ void clearConnection() {
 	audioSocket = 0;
       
    }  
+   for(int i=0;i<length;i++) {
+	StunSocket *cmd = socketArr[i].cmdSocket;
+	char *tmp = socketArr[i].id;
+	if(tmp>0) {
+	   free(tmp);
+	}
+	if(cmd>0 && cmd->sock >0) {
+	   if(cmd->type == STUN_SOCK_TCP)
+	   {
+	  	close(cmd->sock);
+	   } else {
+		UDT::close(cmd->sock);
+	   }
+	   cmd->sock = 0;
+	   cmd = 0;
+	}
+    }
    LOGI("### UdtTools clearConnection over!");
 }
 
@@ -100,12 +117,18 @@ extern "C" void JNICALL Java_com_iped_ipcam_gui_UdtTools_release(JNIEnv *env, jo
 int fetchCamIndex;
 
 StunSocket * checkCmdSocketValid(char *id) {
-	StunSocket *cmdSocketTmp = threeSocketArr[0];
-	if(deviceId != 0 && strcmp(deviceId, id )==0 && cmdSocketTmp != NULL && cmdSocketTmp->sock >0){	
-	  	return cmdSocketTmp; 
+	StunSocket *cmdSocketTmp;
+	for(int i=0;i<length;i++) {
+		cmdSocketTmp = socketArr[i].cmdSocket;
+		char *tmp = socketArr[i].id;
+		if(tmp != 0 && strcmp( tmp, id )==0 && 
+			cmdSocketTmp != NULL && cmdSocketTmp>0 && cmdSocketTmp->sock >0){
+		  	return cmdSocketTmp; 
+		}
 	}
 	return 0;
 }
+
 
 extern "C" int JNICALL Java_com_iped_ipcam_gui_UdtTools_startSearch(JNIEnv *env, jobject thiz)
 {	
@@ -138,35 +161,44 @@ extern "C" void JNICALL Java_com_iped_ipcam_gui_UdtTools_stopSearch(JNIEnv *env,
 
 }
 
-int monitorSocket(char *id) {
-	LOGI("### start monitorSocke");
-	int ret = monitor_socket_avc(id, threeSocketArr);
-	if(ret < 0) {
-	    threeSocketArr[0] = NULL; threeSocketArr[1] = NULL; threeSocketArr[2] = NULL;
-	}
-	LOGI("### end monitorSocke, result %d", ret);
-LOGI("### UdtTools init ---- %d,%d,%d", threeSocketArr[0]->sock,threeSocketArr[1]->sock,threeSocketArr[2]->sock);
-	return ret;
-}
-
-
 extern "C" jint JNICALL Java_com_iped_ipcam_gui_UdtTools_monitorSocket(JNIEnv *env, jobject thiz, jstring camId)
 {
-	deviceId = jstringToChar(env,camId);
-	return monitorSocket(deviceId);
+	LOGI("### start monitorSocke");
+	char* idTmp = jstringToChar(env,camId);
+	int ret = monitor_socket_avc(idTmp, threeSocketArr);
+	if(ret < 0) {
+	    threeSocketArr[0] = NULL; threeSocketArr[1] = NULL; threeSocketArr[2] = NULL;
+	}else {
+	    cmdSocket = threeSocketArr[0];
+	    videoSocket = threeSocketArr[1];
+	    audioSocket = threeSocketArr[2];
+	    socketArr[0].id = idTmp;
+	    socketArr[0].cmdSocket = cmdSocket;
+	}
+	LOGI("### end monitorSocke, result %d", ret);
+	return ret;
 }
 
 extern "C" jint JNICALL Java_com_iped_ipcam_gui_UdtTools_monitorCmdSocket(JNIEnv *env, jobject thiz, jstring camId,jstring rand)
 {
-	char* id = jstringToChar(env,camId);
-	return monitorSocket(id);
+	LOGI("### start monitorCmdSocket");
+	char* idTmp = jstringToChar(env,camId);
+	int ret = monitor_socket_avc(idTmp, threeSocketArrTmp);
+	if(ret < 0) {
+	    threeSocketArrTmp[0] = NULL; threeSocketArrTmp[1] = NULL; threeSocketArrTmp[2] = NULL;
+	}else{
+	    socketArr[1].id = idTmp;
+	    socketArr[1].cmdSocket = threeSocketArrTmp[0];
+	    LOGI("### end monitorCmdSocket, result %d", ret);
+	}
+	return ret;
 }
 
 extern "C" jint JNICALL Java_com_iped_ipcam_gui_UdtTools_sendCmdMsgById(JNIEnv *env, jobject thiz, jstring camId, jstring cmdName, jint cmdNameLength)
 {	
-	//char* id = jstringToChar(env,camId);
-	StunSocket *cmdSendSocket = threeSocketArr[0];
-	//cmdSendSocket = checkCmdSocketValid(id);
+	char* id = jstringToChar(env,camId);
+	StunSocket *cmdSendSocket;
+	cmdSendSocket = checkCmdSocketValid(id);
 	if(cmdSendSocket->sock <= 0) {
 		//free(id);
 		LOGI("### UdtTools send cmd socket is invalid!");
@@ -174,7 +206,6 @@ extern "C" jint JNICALL Java_com_iped_ipcam_gui_UdtTools_sendCmdMsgById(JNIEnv *
 	}
 	char * cmd = jstringToChar(env,cmdName);
 	int res = 0;
-	LOGI("### UdtTools send ---- %d,%d,%d", threeSocketArr[0]->sock,threeSocketArr[1]->sock,threeSocketArr[2]->sock);
 	if(cmdSendSocket->type == STUN_SOCK_TCP) {
 		res =  stun_tcp_sendmsg(cmdSendSocket->sock, cmd, cmdNameLength);
 	} else {
@@ -190,9 +221,9 @@ extern "C" jint JNICALL Java_com_iped_ipcam_gui_UdtTools_sendCmdMsgById(JNIEnv *
 extern "C" jint JNICALL Java_com_iped_ipcam_gui_UdtTools_recvCmdMsgById(JNIEnv *env, jobject thiz, jstring camId, jbyteArray buffer, jint bufferLength)
 {
 	LOGI("### UdtTools start recv cmd msg!");
-	//char* id = jstringToChar(env,camId);
-	StunSocket *cmdSendSocket = threeSocketArr[0];
-	//cmdSendSocket = checkCmdSocketValid(id);
+	char* id = jstringToChar(env,camId);
+	StunSocket *cmdSendSocket;
+	cmdSendSocket = checkCmdSocketValid(id);
 	if(cmdSendSocket->sock <= 0) {
 		//free(id);
 		LOGI("### UdtTools recv cmd socket is invalid!  error info = %i", cmdSendSocket->sock);
@@ -201,13 +232,10 @@ extern "C" jint JNICALL Java_com_iped_ipcam_gui_UdtTools_recvCmdMsgById(JNIEnv *
 	char * tmp = (char*)malloc(bufferLength); 
 	LOGI("### UdtTools wait for recv cmd ...");
 	int dataLength = 0;
-LOGI("### UdtTools recv ----%d,%d,%d", threeSocketArr[0]->sock,threeSocketArr[1]->sock,threeSocketArr[2]->sock);
 	if(cmdSendSocket->type == STUN_SOCK_TCP) {
 		dataLength = stun_tcp_recvmsg(cmdSendSocket->sock,tmp,bufferLength,NULL, NULL);
-LOGI("### UdtTools ---==== %d,",dataLength);
 	} else {
 		dataLength = stun_recvmsg(cmdSendSocket->sock,tmp,bufferLength,NULL, NULL);
-LOGI("### UdtTools --- %d,",dataLength);
 	}
 	
 	if(dataLength <= 0) {
