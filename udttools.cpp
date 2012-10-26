@@ -53,15 +53,12 @@ char* jstringToChar(JNIEnv* env, jstring jstr )
 void clearConnection() {
    LOGI("### UdtTools start exit!");
    if(cmdSocket != NULL) {
-   LOGI("### UdtTools 1111111111");
 	if(cmdSocket->type == STUN_SOCK_TCP)
 	{
 		close(cmdSocket->sock);
 	} else {
 		UDT::close(cmdSocket->sock);
 	}
-   LOGI("### UdtTools 22222222");
-	cmdSocket->sock = 0;
 	free(cmdSocket);
    }
    if(videoSocket != NULL) {
@@ -71,7 +68,6 @@ void clearConnection() {
 	} else {
 		UDT::close(videoSocket->sock);
 	}
-	videoSocket->sock = 0;
 	free(videoSocket);
       
    }
@@ -82,28 +78,30 @@ void clearConnection() {
 	} else {
 		UDT::close(audioSocket->sock);
 	}
-	audioSocket->sock = 0;
 	free(audioSocket);
    }  
    for(int i=0;i<length;i++) {
-	StunSocket *cmd = socketArr[i].cmdSocket;
-	char *tmp = socketArr[i].id;
-   LOGI("### UdtTools aaaa");
-	if(cmd != NULL && cmd->sock >0) {
-   LOGI("### UdtTools bbbb");
-	   if(cmd->type == STUN_SOCK_TCP)
+	StunSocket *cmdS = socketArr[i].cmdSocket;
+	char *tmpI = socketArr[i].id;
+	if(cmdS != NULL && cmdS->sock >0) {
+	   if(cmdS->type == STUN_SOCK_TCP)
 	   {
-	  	close(cmd->sock);
+	  	close(cmdS->sock);
 	   } else {
-		UDT::close(cmd->sock);
+		UDT::close(cmdS->sock);
+	   }	   
+	   if(cmdS != NULL)
+ 	   {
+LOGI("### UdtTools g");
+	      free(cmdS);
 	   }
-	   cmd->sock = 0;
-	   free(cmd);
+	   if(tmpI != NULL)
+   	   {
+	   	free(tmpI);
+	   }
 	}
-   LOGI("### UdtTools cccc");
-	   if(cmd->type == STUN_SOCK_TCP)
-	free(tmp);
     }
+
    LOGI("### UdtTools clearConnection over!");
 }
 
@@ -157,12 +155,6 @@ extern "C" int JNICALL Java_com_iped_ipcam_gui_UdtTools_startSearch(JNIEnv *env,
 	LOGI("### UdtTools startSearch");
 	fetchCamIndex = 0;
 	monitor_search_lan(NULL, NULL, NULL, NULL);
-	LOGI("### UdtTools search over!");
-        return 0;
-}
-
-extern "C" jstring JNICALL Java_com_iped_ipcam_gui_UdtTools_fetchCamId(JNIEnv *env, jobject thiz)
-{
 	LOGI("### UdtTools search over!");
         return 0;
 }
@@ -387,6 +379,7 @@ extern "C" jint JNICALL Java_com_iped_ipcam_gui_UdtTools_sendPTZMsg(JNIEnv *env,
 {
 
 	jint len = env->GetArrayLength(buffer);
+	char* data = (char*)malloc(len);
 	env->GetByteArrayRegion (buffer, (jint)0, (jint)len, (jbyte*)data);
 	int res = 0;
 	if(cmdSocket->type == STUN_SOCK_TCP) {
@@ -418,7 +411,7 @@ extern "C" void JNICALL Java_com_iped_ipcam_gui_UdtTools_exit(JNIEnv *env, jobje
    clearConnection();
 }
 
-extern "C" void JNICALL Java_com_iped_ipcam_gui_UdtTools_free(JNIEnv *env, jobject thiz)
+extern "C" void JNICALL Java_com_iped_ipcam_gui_UdtTools_freeConnection(JNIEnv *env, jobject thiz)
 {
 	LOGI("### UdtTools start free!");
    	StunSocket *socket;
@@ -431,8 +424,7 @@ extern "C" void JNICALL Java_com_iped_ipcam_gui_UdtTools_free(JNIEnv *env, jobje
 			} else {
 				UDT::close(socket->sock);
 			}
-			socket->sock = 0;
-			socket = 0;
+			free(socket);
 		}
 	}
 	LOGI("### UdtTools end free!");
