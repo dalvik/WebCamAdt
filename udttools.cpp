@@ -202,8 +202,8 @@ extern "C" jint JNICALL Java_com_iped_ipcam_gui_UdtTools_monitorSocket(JNIEnv *e
 	    audioSocket = threeSocketArr[2];
 	    socketArr[0].id = idTmp;
 	    socketArr[0].cmdSocket = cmdSocket;
-	}
 	LOGI("### end monitorSocke, result %d,cmdsock value=%d,video socket value=%d, audio socket value=%d", ret,cmdSocket->sock,videoSocket->sock,audioSocket->sock);
+	}
 	return ret;
 }
 
