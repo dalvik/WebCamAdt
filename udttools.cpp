@@ -92,12 +92,13 @@ void clearConnection() {
 	   }	   
 	   if(cmdS != NULL)
  	   {
-LOGI("### UdtTools g");
 	      free(cmdS);
+	      socketArr[i].cmdSocket = NULL;
 	   }
 	   if(tmpI != NULL)
    	   {
 	   	free(tmpI);
+		socketArr[i].id = NULL;
 	   }
 	}
     }
@@ -245,6 +246,21 @@ extern "C" jint JNICALL Java_com_iped_ipcam_gui_UdtTools_freeCmdSocket(JNIEnv *e
 	return 0;
 }
 
+extern "C" jint JNICALL Java_com_iped_ipcam_gui_UdtTools_sendCmdMsg(JNIEnv *env, jobject thiz, jstring cmdName, jint cmdNameLength)
+{	
+	LOGI("### UdtTools send cmd msg !");
+	char * cmd = jstringToChar(env,cmdName);
+	int res = 0;
+	if(cmdSocket->type == STUN_SOCK_TCP) {
+		res =  stun_tcp_sendmsg(cmdSocket->sock, cmd, cmdNameLength);
+	} else {
+		res = stun_sendmsg(cmdSocket->sock, cmd, cmdNameLength);
+	}
+	LOGI("### UdtTools send cmd name = %s send msg length = %d", cmd,res);
+	free(cmd);
+	return res;
+}
+
 extern "C" jint JNICALL Java_com_iped_ipcam_gui_UdtTools_sendCmdMsgById(JNIEnv *env, jobject thiz, jstring camId, jstring cmdName, jint cmdNameLength)
 {	
 	char* id = jstringToChar(env,camId);
@@ -261,15 +277,38 @@ extern "C" jint JNICALL Java_com_iped_ipcam_gui_UdtTools_sendCmdMsgById(JNIEnv *
 	} else {
 		res = stun_sendmsg(cmdSendSocket->sock, cmd, cmdNameLength);
 	}
-	LOGI("### UdtTools send cmd name = %s send msg length = %d, Sock type =%d, Sock value=%d", cmd,res,cmdSendSocket->type,cmdSendSocket->sock);
+	LOGI("### UdtTools send cmd name = %s send msg length = %d", cmd,res);
 	free(cmd);
 	return res;
 }
 
 
+extern "C" jint JNICALL Java_com_iped_ipcam_gui_UdtTools_recvCmdMsg(JNIEnv *env, jobject thiz, jbyteArray buffer, jint bufferLength)
+{
+	char * tmp = (char*)malloc(bufferLength); 
+	LOGI("### UdtTools wait for recv cmd ...");
+	int dataLength = 0;
+	if(cmdSocket->type == STUN_SOCK_TCP) {
+		dataLength = stun_tcp_recvmsg(cmdSocket->sock,tmp,bufferLength,NULL, NULL);
+	} else {
+		dataLength = stun_recvmsg(cmdSocket->sock,tmp,bufferLength,NULL, NULL);
+	}
+	
+	if(dataLength <= 0) {
+	     free(tmp);
+	     LOGI("### UdtTools recv error!");
+	     return -1;
+	}
+ 	tmp[dataLength] = '\0';
+	LOGI("### UdtTools recv data length = %d,%s", dataLength,tmp);
+	env->SetByteArrayRegion(buffer, 0, dataLength,(jbyte*) tmp);  
+	free(tmp);
+	return dataLength; 
+}
+
 extern "C" jint JNICALL Java_com_iped_ipcam_gui_UdtTools_recvCmdMsgById(JNIEnv *env, jobject thiz, jstring camId, jbyteArray buffer, jint bufferLength)
 {
-	LOGI("### UdtTools start recv cmd msg!");
+	LOGI("### UdtTools start recv cmd msg by id!");
 	char* id = jstringToChar(env,camId);
 	StunSocket *cmdSendSocket;
 	cmdSendSocket = checkCmdSocketValid(id);
@@ -291,7 +330,7 @@ extern "C" jint JNICALL Java_com_iped_ipcam_gui_UdtTools_recvCmdMsgById(JNIEnv *
 	     LOGI("### UdtTools recv error!");
 	     return cmdSendSocket->sock;
 	}
-	LOGI("### UdtTools recv data length = %d, Socket Type = %d, socket value=%d", dataLength,cmdSendSocket->type,cmdSendSocket->sock);
+	LOGI("### UdtTools recv data length = %d", dataLength);
 	env->SetByteArrayRegion(buffer, 0, dataLength,(jbyte*) tmp);  
 	free(tmp);
 	return dataLength;	
@@ -322,38 +361,22 @@ extern "C" jint JNICALL Java_com_iped_ipcam_gui_UdtTools_recvAudioMsg(JNIEnv *en
        return dataLength;	
 }
 
-extern "C" jint JNICALL Java_com_iped_ipcam_gui_UdtTools_sendAudioMsg(JNIEnv *env, jobject thiz,jshortArray amrBuffer, int amrBufferLength)
+extern "C" jint JNICALL Java_com_iped_ipcam_gui_UdtTools_sendAudioMsg(JNIEnv *env, jobject thiz,jbyteArray amrBuffer, jint amrBufferLength)
 {
-	short* data = (short*)malloc(amrBufferLength);
-//LOGI("UdtTools  1111 = %p", data);
-//LOGI("UdtTools  2222 = %p", amrBuffer);
-//LOGI("UdtTools  3333 = %d", amrBuffer[0]);
-	env->GetShortArrayRegion(amrBuffer, 0, amrBufferLength, data);
-	//unsigned char* sendAudio = (unsigned char*)malloc(amrBufferLength*2);
-	//short tmp;
-	//int index = 0;
-	//for(int i=0;i<amrBufferLength;i++)
-	//{
-	   //tmp = data[i];
-//LOGI("UdtTools send audio amrBufferLength = %d,%d", tmp,(tmp & 0xFF));
-//LOGI("UdtTools  = %d,%d,%p", amrBufferLength,index,sendAudio);
-//index+=2;
-	   //sendAudio[index++] = tmp & 0x00FF;	   
-	  // sendAudio[index++] = tmp & 0xFF00;	   
-	//}
-
-	int dataLength;
-	//char recvAudioBuf[smallAudioBufferLength];
-	//if(audioSocket->type == STUN_SOCK_TCP) 
-	//{
-		//dataLength = send(audioSocket->sock, sendAudio, index, 0);
-	//} else {
-		//dataLength = UDT::send(audioSocket->sock, sendAudio, index, 0);
-	//}
-	//LOGI("UdtTools send audio Msg length = %d", dataLength);
-	free(data);  
-	//free(sendAudio); 
-        return dataLength;	
+        char* data = (char*)malloc(amrBufferLength);
+        env->GetByteArrayRegion (amrBuffer, (jint)0, (jint)amrBufferLength, (jbyte*)data);
+        int dataLength;
+        //char recvAudioBuf[smallAudioBufferLength];
+        if(audioSocket->type == STUN_SOCK_TCP)
+        {
+                dataLength = send(audioSocket->sock, data, amrBufferLength, 0);
+        } else {
+                dataLength = UDT::send(audioSocket->sock, data, amrBufferLength, 0);
+        }
+        //LOGI("UdtTools send audio Msg length = %d", dataLength);
+        free(data);
+	//LOGI("free");
+        return dataLength;
 }
 
 extern "C" jint JNICALL Java_com_iped_ipcam_gui_UdtTools_recvVideoMsg(JNIEnv *env, jobject thiz,jbyteArray buffer, int bufferLength)
@@ -401,14 +424,15 @@ extern "C" void JNICALL Java_com_iped_ipcam_gui_UdtTools_close(JNIEnv *env, jobj
 			UDT::close(socketArr[1].cmdSocket->sock);
 		}
 		socketArr[1].id = 0;
-		socketArr[1].cmdSocket = 0;
+		socketArr[1].cmdSocket = NULL;
 		LOGI("### UdtTools release cmd socket!");
 	}
 }
 
 extern "C" void JNICALL Java_com_iped_ipcam_gui_UdtTools_exit(JNIEnv *env, jobject thiz)
 {
-   clearConnection();
+	freeSocket();
+   //clearConnection();
 }
 
 extern "C" void JNICALL Java_com_iped_ipcam_gui_UdtTools_freeConnection(JNIEnv *env, jobject thiz)
@@ -424,8 +448,9 @@ extern "C" void JNICALL Java_com_iped_ipcam_gui_UdtTools_freeConnection(JNIEnv *
 			} else {
 				UDT::close(socket->sock);
 			}
-			free(socket);
 		}
+		free(socket);
+		threeSocketArr[i] = NULL;
 	}
 	LOGI("### UdtTools end free!");
 }
