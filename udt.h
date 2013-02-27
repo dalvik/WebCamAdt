@@ -290,11 +290,11 @@ public: // Error Code
 };
 
 //add by sky
-typedef struct _CmdSocket
+typedef struct _AVSocket
 {
     char *id; // webcamid
-    StunSocket *cmdSocket; // command socket
-} CmdSocket;
+    SocketFusion *socket; // socket
+} AVSocket;
 
 
 ////////////////////////////////////////////////////////////////////////////////

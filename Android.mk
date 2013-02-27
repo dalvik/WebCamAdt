@@ -27,6 +27,7 @@ LOCAL_SHARED_LIBRARIES := \
 LOCAL_SRC_FILES :=  \
 		udttools.cpp\
 		udt4/app/stun.cpp \
+		udt4/app/stun-fusion.cpp \
 		udt4/app/stun-monitor.cpp\
 		miniupnpc-1.7.20120830/miniwget.c \
 		miniupnpc-1.7.20120830/minixml.c \
