@@ -127,7 +127,7 @@ extern "C" jstring JNICALL Java_com_iped_ipcam_gui_UdtTools_monitorCmdSocket(JNI
 			LOGI("### configf connection success.%p", socket2);
 			return getOK(env);
 		} else {
-			Java_com_iped_ipcam_gui_UdtTools_monitorSocket(env, thiz,camId);
+			return Java_com_iped_ipcam_gui_UdtTools_monitorSocket(env, thiz,camId);
 		}
 	}
 	LOGI("### config connection faliled.");
@@ -269,16 +269,27 @@ extern "C" jint JNICALL Java_com_iped_ipcam_gui_UdtTools_sendAudioMsg(JNIEnv *en
 extern "C" jint JNICALL Java_com_iped_ipcam_gui_UdtTools_recvVideoMsg(JNIEnv *env, jobject thiz,jbyteArray buffer, int bufferLength)
 {
     int dataLength;
+	
     if(socket_fusion_is_usable(socket1)) 
     {
-		dataLength = socket_fusion_recv(socket1,1,buf, 4096);
+		/*while(timeoutCount<=30) {
+			dataLength = socket_fusion_recv_timeout(socket1,1,buf, 4096, 2);
+			if(dataLength>0 || dataLength == -1) {
+				timeoutCount = 0;
+				break;
+			}
+		}*/
+		dataLength = socket_fusion_recv_timeout(socket1,1,buf, 4096, 2);
+		if(dataLength == 0) {
+			LOGE("### timeout ----");
+		}
     } else {
 		dataLength = -1;
 	}
     //LOGI("### UdtTools recvVideoMsg result %d", dataLength);
-    if(dataLength < 0) {
-	LOGI("UdtTools recvVideoMsg over");
-     	return -1;
+    if(dataLength <= 0) {
+		LOGI("UdtTools recvVideoMsg over");
+     	return dataLength;
     }
     env->SetByteArrayRegion(buffer, 0, dataLength,(jbyte*) buf);  
     //LOGI("### UdtTools recvVideoMsg result aaaaaaa %d", dataLength);

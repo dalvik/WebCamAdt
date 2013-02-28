@@ -16,6 +16,8 @@ char* id = NULL;
 
 char buf[4096];
 
+int timeoutCount = 0;
+
 int fetchCamIndex;
 
 jstring result = NULL;
