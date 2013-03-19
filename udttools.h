@@ -16,6 +16,10 @@ char* id = NULL;
 
 char buf[4096];
 
+char recvAudioBuf[5120];
+
+int timeoutCount = 0;
+
 int fetchCamIndex;
 
 jstring result = NULL;
