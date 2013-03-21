@@ -281,7 +281,7 @@ extern "C" jint JNICALL Java_com_iped_ipcam_gui_UdtTools_recvCmdMsgById(JNIEnv *
 extern "C" jint JNICALL Java_com_iped_ipcam_gui_UdtTools_recvAudioMsg(JNIEnv *env, jobject thiz,jint smallAudioBufferLength, jbyteArray buffer, jint bigAudioBufferLength)
 {
 	int pos=0;
-	int dataLength;
+	int dataLength = 0;
 	//char recvAudioBuf[smallAudioBufferLength];
 	if(socket_fusion_is_usable(socket1)) 
 	{
