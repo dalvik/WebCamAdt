@@ -83,7 +83,7 @@ extern "C" jstring JNICALL Java_com_iped_ipcam_gui_UdtTools_monitorSocket(JNIEnv
 	LOGI("### start monitorSocke");
 	char* idTmp = jstringToChar(env,camId);
 	id = idTmp;
-	socket1 = monitor_socket_fusion(idTmp);
+	socket1 = monitor_socket_fusion(idTmp, 1);
 	while (1)
     {
 		if(socket1 == NULL) {
@@ -116,7 +116,7 @@ extern "C" jstring JNICALL Java_com_iped_ipcam_gui_UdtTools_monitorCmdSocket(JNI
 	}
 	char* idTmp = jstringToChar(env,camId);
 	if(id == NULL || strcmp( idTmp, id )!=0) {
-		socket2 = monitor_socket_fusion(idTmp);
+		socket2 = monitor_socket_fusion(idTmp, 1);
 		if(socket2 == NULL) {
 			return env->NewStringUTF("cmd fusion error");
 		}
@@ -237,7 +237,7 @@ extern "C" jint JNICALL Java_com_iped_ipcam_gui_UdtTools_recvCmdMsg(JNIEnv *env,
 	LOGI("### UdtTools start recv-Cmd-Msg ...");
 	int dataLength = 0;
 	if (socket_fusion_is_usable(socket1)) {
-		dataLength = socket_fusion_recvmsg(socket1, 0, tmp, bufferLength);
+		dataLength = socket_fusion_recvmsg(socket1, 0, tmp, bufferLength, 30);
 	}
 	
 	if(dataLength <= 0) {
@@ -260,11 +260,11 @@ extern "C" jint JNICALL Java_com_iped_ipcam_gui_UdtTools_recvCmdMsgById(JNIEnv *
 	int dataLength = 0;
 	if(id != NULL && strcmp( idTmp, id )==0) {
 		if (socket_fusion_is_usable(socket1)) {
-			dataLength = socket_fusion_recvmsg(socket1, 0, tmp, bufferLength);
+			dataLength = socket_fusion_recvmsg(socket1, 0, tmp, bufferLength, 30);
 		}
 	}else{
 		if (socket_fusion_is_usable(socket2)) {
-			dataLength = socket_fusion_recvmsg(socket2, 0, tmp, bufferLength);
+			dataLength = socket_fusion_recvmsg(socket2, 0, tmp, bufferLength, 30);
 		}
 	}
 	if(dataLength < 0) {
@@ -285,7 +285,7 @@ extern "C" jint JNICALL Java_com_iped_ipcam_gui_UdtTools_recvAudioMsg(JNIEnv *en
 	//char recvAudioBuf[smallAudioBufferLength];
 	if(socket_fusion_is_usable(socket1)) 
 	{
-		dataLength = socket_fusion_recv_timeout(socket1, 2, recvAudioBuf, smallAudioBufferLength,2);
+		dataLength = socket_fusion_recv(socket1, 2, recvAudioBuf, smallAudioBufferLength,2);
 	} 
 	if(dataLength <= 0) { 
 	    return dataLength;
@@ -311,18 +311,18 @@ extern "C" jint JNICALL Java_com_iped_ipcam_gui_UdtTools_sendAudioMsg(JNIEnv *en
 
 extern "C" jint JNICALL Java_com_iped_ipcam_gui_UdtTools_recvVideoMsg(JNIEnv *env, jobject thiz,jbyteArray buffer, int bufferLength)
 {
-    int dataLength;
+    int dataLength = 0;
 	
     if(socket_fusion_is_usable(socket1)) 
     {
-		dataLength = socket_fusion_recv_timeout(socket1,1,buf, 4096, 2);
+		dataLength = socket_fusion_recv(socket1,1,buf, 4096, 2);
 		if(dataLength == 0) {
 			LOGE("### recv video data timeout");
 		}
     } else {
 		dataLength = -1;
 	}
-    //LOGI("### UdtTools recvVideoMsg result %d", dataLength);
+   // LOGI("### UdtTools recvVideoMsg result %d", dataLength);
     if(dataLength <= 0) {
      	return dataLength;
     }
